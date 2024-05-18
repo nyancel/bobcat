@@ -1,6 +1,11 @@
 # Bobcat
 a webserver in C
 
+this is very much a work in progress, the idea is to have a
+somewhat decent yet very simple web-server framework focused on
+static files, templating and forms to build traditional 
+SSR MPA applications. as well as handling things like file-transfers.
+
 ## Threading
 Threading is done using pthread, each request
 gets the fd from the accept() calll on the base socket,

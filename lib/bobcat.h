@@ -1,10 +1,24 @@
 #ifndef BOBCAT_H
 #define BOBCAT_H
 
+enum bc_request_method
+{
+    GET = 1,
+    HEAD = 2,
+    POST = 3,
+    PUT = 4,
+    DELETE = 5,
+    CONNECT = 6,
+    OPTIONS = 7,
+    TRAFCE = 8,
+    PATCH = 9,
+    NONE = 0,
+};
+
 struct bc_server_config
 {
     struct bc_tcp_socket *tcp_config;
-    void (*handler)(int p_fd);
+    int (*handler)(struct bc_request *req);
 };
 
 struct bc_tcp_socket
@@ -13,6 +27,11 @@ struct bc_tcp_socket
     int socket_fd;
     int host_addrlen;
     struct sockaddr_in *host_addr;
+};
+
+struct bc_request
+{
+    int accept_fd;
 };
 
 struct bc_server_config *bc_server_new(int port);

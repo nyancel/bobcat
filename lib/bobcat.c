@@ -94,10 +94,19 @@ struct bc_server_config *bc_server_new(int port)
     return server_config;
 }
 
+struct bc_request *parse_request(int accept_fd)
+{
+    struct bc_request *req = malloc(sizeof(struct bc_request));
+    req->accept_fd = accept_fd;
+    return req;
+}
+
 int bc_server_dispatch(struct dispatch_args *args)
 {
-    args->config->handler(args->p_fd);
+    struct bc_request *req = parse_request(args->p_fd);
+    args->config->handler(req);
     free(args);
+    free(req);
     return 0;
 }
 

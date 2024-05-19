@@ -7,10 +7,10 @@
 #include "../lib/bobcat.h"
 #include "../lib/util/dictlist.h"
 
-int server_request_handler(int p_fd)
+int server_request_handler(struct bc_request *req)
 {
     // plain example for now, should improve later
-    int request_fd = p_fd;
+    int request_fd = req->accept_fd;
 
     printf("connection accepted\n");
     char buffer[1024];
@@ -43,8 +43,8 @@ int main(int argc, char *argv)
     // clean the terminal when we start the server
     system("clear");
     struct bc_server_config *serv_con = bc_server_new(3000);
-    serv_con->handler = (void *)&server_request_handler;
+    serv_con->handler = (int *)&server_request_handler;
     // start the server
-    int start = bc_server_start(serv_con);
+    bc_server_start(serv_con);
     return 0; // <- should never actually return since server_start is blocking
 }

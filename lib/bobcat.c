@@ -2,15 +2,23 @@
 #include <errno.h>
 #include <stdio.h>
 #include <sys/socket.h>
-#include <stdlib.h>
 #include <unistd.h>
+#include <pthread.h>
+#include <string.h>
+#include <stdlib.h>
 
-#include "./tcp_socket.h"
+#include "./bobcat.h"
 
-struct tcp_socket *tcp_socket_new(int port)
+struct dispatch_args
+{
+    struct bc_server_config *config;
+    int p_fd;
+};
+
+struct bc_tcp_socket *tcp_socket_new(int port)
 {
     // Malloc everything
-    struct tcp_socket *config = malloc(sizeof(struct tcp_socket));
+    struct bc_tcp_socket *config = malloc(sizeof(struct bc_tcp_socket));
     if (config == NULL)
     {
         perror("memmory error constructing socket");
@@ -46,7 +54,7 @@ struct tcp_socket *tcp_socket_new(int port)
     return config;
 }
 
-int tcp_socket_bind(struct tcp_socket *config)
+int tcp_socket_bind(struct bc_tcp_socket *config)
 {
     // Bind the socket to the address
     if (bind(config->socket_fd, (struct sockaddr *)config->host_addr, config->host_addrlen) != 0)
@@ -58,7 +66,7 @@ int tcp_socket_bind(struct tcp_socket *config)
     return 0;
 }
 
-int tcp_socket_listen(struct tcp_socket *config)
+int tcp_socket_listen(struct bc_tcp_socket *config)
 {
     if (listen(config->socket_fd, SOMAXCONN) != 0)
     {
@@ -69,9 +77,49 @@ int tcp_socket_listen(struct tcp_socket *config)
     return 0;
 }
 
-int tcp_socket_free(struct tcp_socket *config)
+int tcp_socket_free(struct bc_tcp_socket *config)
 {
     close(config->socket_fd);
     free(config->host_addr);
     free(config);
+}
+
+struct bc_server_config *bc_server_new(int port)
+{
+    struct bc_tcp_socket *s = tcp_socket_new(port);
+    tcp_socket_bind(s);
+    tcp_socket_listen(s);
+    struct bc_server_config *server_config = malloc(sizeof(struct bc_server_config));
+    server_config->tcp_config = s;
+    return server_config;
+}
+
+int bc_server_dispatch(struct dispatch_args *args)
+{
+    args->config->handler(args->p_fd);
+    free(args);
+    return 0;
+}
+
+int bc_server_start(struct bc_server_config *config)
+{
+    // Accept incoming connections
+    while (1)
+    {
+        int p_fd = accept(config->tcp_config->socket_fd,
+                          (struct sockaddr *)config->tcp_config->host_addr,
+                          (socklen_t *)&config->tcp_config->host_addrlen);
+        if (p_fd < 0)
+        {
+            perror("webserver (accept)");
+            return -1;
+        }
+
+        struct dispatch_args *d_args = malloc(sizeof(struct dispatch_args));
+        d_args->config = config;
+        d_args->p_fd = p_fd;
+        pthread_t thread_id;
+        pthread_create(&thread_id, NULL, (void *)*bc_server_dispatch, (void *)d_args);
+        pthread_detach(thread_id);
+    }
 }

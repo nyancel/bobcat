@@ -4,8 +4,7 @@
 #include <errno.h>
 #include <string.h>
 
-#include "../lib/bobcat/server.h"
-#include "../lib/bobcat/tcp_socket.h"
+#include "../lib/bobcat.h"
 #include "../lib/util/dictlist.h"
 
 int server_request_handler(int p_fd)
@@ -43,28 +42,9 @@ int main(int argc, char *argv)
 {
     // clean the terminal when we start the server
     system("clear");
-
-    // create and config the socket
-    struct tcp_socket *socket_configuration = tcp_socket_new(3000);
-    // bind
-    if (tcp_socket_bind(socket_configuration) < 0)
-    {
-        printf("Could not bind the socket\n");
-        return -1;
-    }
-    // listen
-    if (tcp_socket_listen(socket_configuration) < 0)
-    {
-        printf("Could not bind the socket");
-        return -1;
-    }
-
-    // set up server config
-    struct server_config *serv_con = malloc(sizeof(struct server_config));
-    serv_con->tcp_config = socket_configuration;
+    struct bc_server_config *serv_con = bc_server_new(3000);
     serv_con->handler = (void *)&server_request_handler;
-
     // start the server
-    int start = server_start(serv_con);
+    int start = bc_server_start(serv_con);
     return 0; // <- should never actually return since server_start is blocking
 }

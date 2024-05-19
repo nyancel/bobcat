@@ -1,5 +1,6 @@
 build:
 	gcc -c lib/**/*.c
+	gcc -c lib/*.c
 	gcc -c src/*.c
 	mkdir -p ./obj
 	mv ./*.o ./obj

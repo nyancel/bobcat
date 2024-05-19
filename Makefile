@@ -6,7 +6,7 @@ build:
 	mkdir -p ./build
 	gcc ./obj/*.o -o ./build/program
 
-test: build
+test: clean build
 	clear
 	./build/program
 

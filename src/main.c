@@ -8,10 +8,10 @@
 #include "../lib/bobcat/tcp_socket.h"
 #include "../lib/util/dictlist.h"
 
-int server_request_handler(int *p_fd)
+int server_request_handler(int p_fd)
 {
     // plain example for now, should improve later
-    int request_fd = *p_fd;
+    int request_fd = p_fd;
 
     printf("connection accepted\n");
     char buffer[1024];
@@ -46,8 +46,18 @@ int main(int argc, char *argv)
 
     // create and config the socket
     struct tcp_socket *socket_configuration = tcp_socket_new(3000);
-    int bind = tcp_socket_bind(socket_configuration);
-    int listen = tcp_socket_listen(socket_configuration);
+    // bind
+    if (tcp_socket_bind(socket_configuration) < 0)
+    {
+        printf("Could not bind the socket\n");
+        return -1;
+    }
+    // listen
+    if (tcp_socket_listen(socket_configuration) < 0)
+    {
+        printf("Could not bind the socket");
+        return -1;
+    }
 
     // set up server config
     struct server_config *serv_con = malloc(sizeof(struct server_config));

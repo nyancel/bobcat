@@ -10,6 +10,19 @@
 #include "./tcp_socket.h"
 #include "./server.h"
 
+struct dispatch_args
+{
+    struct server_config *config;
+    int p_fd;
+};
+
+int server_dispatch(struct dispatch_args *args)
+{
+    args->config->handler(args->p_fd);
+    free(args);
+    return 0;
+}
+
 int server_start(struct server_config *config)
 {
     // Accept incoming connections
@@ -24,8 +37,11 @@ int server_start(struct server_config *config)
             return -1;
         }
 
+        struct dispatch_args *d_args = malloc(sizeof(struct dispatch_args));
+        d_args->config = config;
+        d_args->p_fd = p_fd;
         pthread_t thread_id;
-        pthread_create(&thread_id, NULL, (void *)config->handler, (void *)&p_fd);
+        pthread_create(&thread_id, NULL, (void *)*server_dispatch, (void *)d_args);
         pthread_detach(thread_id);
     }
 }

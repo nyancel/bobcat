@@ -137,7 +137,12 @@ char *bc_request_read_buffer(int accept_fd)
     // read the next chunk if needed:
     while (valread == base_size)
     {
-        realloc(buffer, cur_size + base_size);
+        void *result = realloc(buffer, cur_size + base_size);
+        if (result == NULL)
+        {
+            perror("bc_request_read_buffer: Could not realloc");
+            return NULL;
+        }
         valread = read(accept_fd, buffer + cur_size, base_size);
         cur_size = cur_size + base_size;
     }
@@ -157,8 +162,9 @@ int bc_server_dispatch(struct dispatch_args *args)
     struct bc_request *req = bc_request_parse(args->p_fd);
     args->config->handler(req);
     close(req->accept_fd);
-    free(args);
+    free(req->raw_buffer);
     free(req);
+    free(args);
     return 0;
 }
 

@@ -41,7 +41,7 @@ int main(int argc, char *argv)
     }
 
     // register the handler
-    serv_con->handler = (int *)&server_request_handler;
+    serv_con->handler = (void *)&server_request_handler;
 
     // start the server
     bc_server_start(serv_con);

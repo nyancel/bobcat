@@ -15,10 +15,12 @@ enum bc_request_method
     NONE = 0,
 };
 
-struct bc_server_config
+struct bc_request
 {
-    struct bc_tcp_socket *tcp_config;
-    int (*handler)(struct bc_request *req);
+    int accept_fd;
+    enum bc_request_method method;
+    char *uri;
+    char *raw_buffer;
 };
 
 struct bc_tcp_socket
@@ -29,9 +31,10 @@ struct bc_tcp_socket
     struct sockaddr_in *host_addr;
 };
 
-struct bc_request
+struct bc_server_config
 {
-    int accept_fd;
+    struct bc_tcp_socket *tcp_config;
+    int (*handler)(struct bc_request *req);
 };
 
 struct bc_server_config *bc_server_new(int port);

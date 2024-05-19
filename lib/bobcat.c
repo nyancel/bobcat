@@ -87,24 +87,76 @@ int tcp_socket_free(struct bc_tcp_socket *config)
 struct bc_server_config *bc_server_new(int port)
 {
     struct bc_tcp_socket *s = tcp_socket_new(port);
-    tcp_socket_bind(s);
-    tcp_socket_listen(s);
+    if (s == NULL)
+    {
+        perror("could not make socket");
+        return NULL;
+    }
+    if (tcp_socket_bind(s) < 0)
+    {
+        perror("could not bind socket");
+        return NULL;
+    }
+    if (tcp_socket_listen(s) < 0)
+    {
+        perror("could not listen on socket");
+        return NULL;
+    }
+
     struct bc_server_config *server_config = malloc(sizeof(struct bc_server_config));
+    if (server_config == NULL)
+    {
+        perror("could not malloc server_config");
+        return NULL;
+    }
     server_config->tcp_config = s;
     return server_config;
 }
 
-struct bc_request *parse_request(int accept_fd)
+char *bc_request_read_buffer(int accept_fd)
+{
+    // init the deets 😎
+    const int base_size = 64;
+    int cur_size = base_size;
+    char *buffer = malloc(sizeof(char) * base_size);
+    if (buffer == NULL)
+    {
+        perror("webserver (malloc)");
+        return NULL;
+    }
+
+    // read the first chunk
+    int valread = read(accept_fd, buffer, base_size);
+    if (valread < 0)
+    {
+        perror("webserver (read)");
+        free(buffer);
+        return NULL;
+    }
+
+    // read the next chunk if needed:
+    while (valread == base_size)
+    {
+        realloc(buffer, cur_size + base_size);
+        valread = read(accept_fd, buffer + cur_size, base_size);
+        cur_size = cur_size + base_size;
+    }
+    return buffer;
+}
+
+struct bc_request *bc_request_parse(int accept_fd)
 {
     struct bc_request *req = malloc(sizeof(struct bc_request));
     req->accept_fd = accept_fd;
+    req->raw_buffer = bc_request_read_buffer(req->accept_fd);
     return req;
 }
 
 int bc_server_dispatch(struct dispatch_args *args)
 {
-    struct bc_request *req = parse_request(args->p_fd);
+    struct bc_request *req = bc_request_parse(args->p_fd);
     args->config->handler(req);
+    close(req->accept_fd);
     free(args);
     free(req);
     return 0;

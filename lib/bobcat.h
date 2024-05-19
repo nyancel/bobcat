@@ -3,16 +3,16 @@
 
 enum bc_request_method
 {
-    GET = 1,
-    HEAD = 2,
-    POST = 3,
-    PUT = 4,
-    DELETE = 5,
-    CONNECT = 6,
-    OPTIONS = 7,
-    TRAFCE = 8,
-    PATCH = 9,
-    NONE = 0,
+    bc_GET = 1,
+    bc_HEAD = 2,
+    bc_POST = 3,
+    bc_PUT = 4,
+    bc_DELETE = 5,
+    bc_CONNECT = 6,
+    bc_OPTIONS = 7,
+    bc_TRAFCE = 8,
+    bc_PATCH = 9,
+    bc_NONE = 0,
 };
 
 struct bc_request

@@ -116,7 +116,7 @@ struct bc_server_config *bc_server_new(int port)
 char *bc_request_read_buffer(int accept_fd)
 {
     // init the deets 😎
-    const int base_size = 64;
+    const int base_size = 1024;
     int cur_size = base_size;
     char *buffer = malloc(sizeof(char) * base_size);
     if (buffer == NULL)
@@ -154,12 +154,24 @@ struct bc_request *bc_request_parse(int accept_fd)
     struct bc_request *req = malloc(sizeof(struct bc_request));
     req->accept_fd = accept_fd;
     req->raw_buffer = bc_request_read_buffer(req->accept_fd);
+    if (req->raw_buffer == NULL)
+    {
+        perror("bc_request_parse: could not read buffer");
+        return NULL;
+    }
     return req;
 }
 
 int bc_server_dispatch(struct dispatch_args *args)
 {
     struct bc_request *req = bc_request_parse(args->p_fd);
+    if (req == NULL)
+    {
+        perror("bc_server_dispatch: could not parse req");
+        close(args->p_fd);
+        free(args);
+        return -1;
+    }
     args->config->handler(req);
     close(req->accept_fd);
     free(req->raw_buffer);

@@ -159,6 +159,52 @@ struct bc_request *bc_request_parse(int accept_fd)
         perror("bc_request_parse: could not read buffer");
         return NULL;
     }
+
+    // make a buffer copy to parse out the uri and method
+    char *buffer_copy = malloc(strlen(req->raw_buffer));
+    strcpy(buffer_copy, req->raw_buffer);
+
+    // method is first word
+    char *word = strtok(buffer_copy, " ");
+    req->method = bc_NONE;
+    if (strcmp(word, "GET") == 0)
+    {
+        req->method = bc_GET;
+    }
+    if (strcmp(word, "HEAD") == 0)
+    {
+        req->method = bc_HEAD;
+    }
+    if (strcmp(word, "POST") == 0)
+    {
+        req->method = bc_POST;
+    }
+    if (strcmp(word, "PUT") == 0)
+    {
+        req->method = bc_PUT;
+    }
+    if (strcmp(word, "DELETE") == 0)
+    {
+        req->method = bc_DELETE;
+    }
+    if (strcmp(word, "CONNECT") == 0)
+    {
+        req->method = bc_CONNECT;
+    }
+    if (strcmp(word, "OPTIONS") == 0)
+    {
+        req->method = bc_OPTIONS;
+    }
+    if (strcmp(word, "TRAFCE") == 0)
+    {
+        req->method = bc_TRAFCE;
+    }
+    if (strcmp(word, "PATCH") == 0)
+    {
+        req->method = bc_PATCH;
+    }
+      
+    free(buffer_copy);
     return req;
 }
 

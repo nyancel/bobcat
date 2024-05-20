@@ -9,7 +9,7 @@
 
 int server_request_handler(struct bc_request *req)
 {
-    printf("%s\n", req->raw_buffer);
+    printf("%s\n", req->uri);
     // plain example for now, should improve later
     char *resp = "HTTP/1.0 200 OK\r\n"
                  "Server: webserver-c\r\n"

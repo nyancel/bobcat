@@ -170,6 +170,28 @@ enum bc_request_method bc_request_parse_method(char *raw)
     return result;
 }
 
+char *bc_request_parse_uri(char *raw)
+{
+    // the second word of the request should hold uri
+    // get the start of the uri
+    int start;
+    for (start = 0; start < strlen(raw) && raw[start] != ' '; start++)
+    {
+    };
+    // step into the next word
+    start++;
+    // get the length of the uri
+    int length;
+    for (length = 0; length < strlen(raw) && raw[start + length] != ' '; length++)
+    {
+    };
+    // malloc and copy the word
+    char *word = malloc(length + 1);
+    strncpy(word, raw + start, length);
+    word[length] = '\0';
+    return word;
+}
+
 struct bc_request *bc_request_parse(int accept_fd)
 {
     struct bc_request *req = malloc(sizeof(struct bc_request));
@@ -181,6 +203,7 @@ struct bc_request *bc_request_parse(int accept_fd)
         return NULL;
     }
     req->method = bc_request_parse_method(req->raw_buffer);
+    req->uri = bc_request_parse_uri(req->raw_buffer);
     return req;
 }
 
@@ -195,7 +218,9 @@ int bc_server_dispatch(struct dispatch_args *args)
         return -1;
     }
     args->config->handler(req);
+    // clean up request
     close(req->accept_fd);
+    free(req->uri);
     free(req->raw_buffer);
     free(req);
     // clean up args

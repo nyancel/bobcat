@@ -37,7 +37,7 @@ possible, its much apreciated ^~^
 - [x] handler: threaded tasks
 - [ ] handler: hot reloading
 - [x] request parsing: methods
-- [ ] request parsing: uri - path
+- [x] request parsing: uri - path
 - [ ] request parsing: uri - args
 - [ ] request parsing: headers
 - [ ] request parsing: body - json

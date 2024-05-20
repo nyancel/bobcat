@@ -17,6 +17,47 @@ struct dispatch_args
     int *p_fd;
 };
 
+char *bc_method_name(enum bc_request_method method)
+{
+    switch (method)
+    {
+    case bc_GET:
+        return "GET";
+        break;
+    case bc_HEAD:
+        return "HEAD";
+        break;
+    case bc_POST:
+        return "POST";
+        break;
+    case bc_PUT:
+        return "PUT";
+        break;
+    case bc_DELETE:
+        return "DELETE";
+        break;
+    case bc_CONNECT:
+        return "CONNECT";
+        break;
+    case bc_OPTIONS:
+        return "OPTIONS";
+        break;
+    case bc_TRACE:
+        return "TRACE";
+        break;
+    case bc_PATCH:
+        return "PATCH";
+        break;
+    case bc_NONE:
+        return "NONE";
+        break;
+    default:
+        break;
+    }
+    perror("Unknown method");
+    return NULL;
+}
+
 struct bc_server_config *bc_server_new(int port)
 {
     // Malloc and init the config

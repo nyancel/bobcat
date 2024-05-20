@@ -35,4 +35,7 @@ struct bc_server_config
 struct bc_server_config *bc_server_new(int port);
 int bc_server_start(struct bc_server_config *config);
 
+// utility stuff
+char *bc_method_name(enum bc_request_method method);
+
 #endif // BOBCAT_H

@@ -6,27 +6,36 @@ somewhat decent yet very simple web-server framework focused on
 static files, templating and forms to build traditional 
 SSR MPA applications. as well as handling things like file-transfers.
 
-## Threading
-Threading is done using pthread, each request
-gets the fd from the accept() calll on the base socket,
-these accepted fd's are passed alongside void* handler
-descriptions to a detached thread in order to provide async
-request handling
+## Roadmap
+1. Threading ✅
+2. Request parsing 🟡
+3. Handler mapping ❌
+4. Response generation ❌
 
-## Hot Reloading
-Hot reloading van be built on POSIX opertaions and
-has been a thing since forever. even for compiled languages
-like C, using dlopen and dlsym to find void* referencing 
-.so functions.
+-- maybe more to come?
 
-## route-mapping
-Route-mapping would be done using a dictlist, or set of dictlists
-for each relevant method. passing the URI to the list, and
-retrieving the function-pointer contained in the data.
+## wishlist
+**HOT RELOAD**: I would love to include things like support for 
+hot-reloading, but im not sure exactly how to do that from a library 
+perspective, that might be more of an application level thing.
+
+**JSON**: i might implement the c-json lib in order to have access
+to parsing json data from the request body for building API's, althouhg
+that is not the primary focus at the moment.
+
+## things i need help with
+does it leak? does it leak a lot?
+its really bad isnt it? memmory management is not my strongest suit,
+and while i try to keep a track of stuff i realize that there are 
+probably several places where bobcat isnt really "house-clean".
+
+so if you're comfy with valgrind or have some other tools up your belt 
+feel free to help sort out threading and memmor management where 
+possible, its much apreciated ^~^
 
 **todo:**
 - [x] handler: threaded tasks
-- [ ] handler: hot reloading? 🤔
+- [ ] handler: hot reloading
 - [ ] request parsing: methods
 - [ ] request parsing: uri - path
 - [ ] request parsing: uri - args
@@ -35,6 +44,6 @@ retrieving the function-pointer contained in the data.
 - [ ] request parsing: body - form
 - [ ] response construction: head - statuscode
 - [ ] response construction: head - headers
-- [ ] response construction: head - cookie? 🤔
+- [ ] response construction: head - cookie
 - [ ] response construction: body - html
 - [ ] response construction: body - json

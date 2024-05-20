@@ -25,15 +25,6 @@ struct bc_request
     char *raw_buffer;
 };
 
-struct bc_server_config
-{
-    int port;
-    int socket_fd;
-    int host_addrlen;
-    struct sockaddr_in *host_addr;
-    struct dictlist_node *handlers;
-};
-
 struct bc_server_config *bc_server_new(int port);
 int bc_server_start(struct bc_server_config *config);
 int bc_server_register(struct bc_server_config *config, enum bc_request_method method, char *url, int (*handler)(struct bc_request *req));

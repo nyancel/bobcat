@@ -11,6 +11,15 @@
 
 #define BC_REQ_BASE_SIZE 64
 
+struct bc_server_config
+{
+    int port;
+    int socket_fd;
+    int host_addrlen;
+    struct sockaddr_in *host_addr;
+    struct dictlist_node *handlers;
+};
+
 struct dispatch_args
 {
     struct bc_server_config *config;
@@ -142,9 +151,17 @@ char *bc_request_read_buffer(int accept_fd)
             perror("bc_request_read_buffer: Could not realloc");
             return NULL;
         }
+        buffer = result;
+
         valread = read(accept_fd, buffer + cur_size, base_size);
+        if (valread < 0)
+        {
+            perror("bc_request_read_buffer: valread < 0");
+            return NULL;
+        }
         cur_size = cur_size + base_size;
     }
+
     int last = cur_size - base_size + valread;
     buffer[last] = '\0';
     return buffer;

@@ -9,114 +9,72 @@
 
 #include "./bobcat.h"
 
+#define BC_REQ_BASE_SIZE 64
+
 struct dispatch_args
 {
     struct bc_server_config *config;
-    int p_fd;
+    int *p_fd;
 };
 
-struct bc_tcp_socket *tcp_socket_new(int port)
+struct bc_server_config *bc_server_new(int port)
 {
-    // Malloc everything
-    struct bc_tcp_socket *config = malloc(sizeof(struct bc_tcp_socket));
+    // Malloc and init the config
+    struct bc_server_config *config = malloc(sizeof(struct bc_server_config));
     if (config == NULL)
     {
-        perror("memmory error constructing socket");
+        perror("bc_server_new: memmory error constructing socket");
         return NULL;
     }
+    config->port = port;
+    config->host_addrlen = sizeof(struct sockaddr_in);
 
+    // create the host_addr data
     config->host_addr = malloc(sizeof(struct sockaddr_in));
     if (config->host_addr == NULL)
     {
-        perror("memmory error constructing socket_addr");
+        perror("bc_server_new: memmory error constructing socket_addr struct");
         free(config);
         return NULL;
     }
+    config->host_addr->sin_family = AF_INET;
+    config->host_addr->sin_port = htons(port);
+    config->host_addr->sin_addr.s_addr = htonl(INADDR_ANY);
 
     // open the socket
     config->socket_fd = socket(AF_INET, SOCK_STREAM, 0);
-    if (config->socket_fd == -1)
+    if (config->socket_fd < 0)
     {
-        perror("could not create new socket");
+        perror("bc_server_new: could not create new socket");
         free(config->host_addr);
         free(config);
         return NULL;
     }
 
-    printf("TCP socket created\n");
-    // assign remaining stuff;
-    config->host_addrlen = sizeof(struct sockaddr_in);
-    config->port = port;
-    config->host_addr->sin_family = AF_INET;
-    config->host_addr->sin_port = htons(port);
-    config->host_addr->sin_addr.s_addr = htonl(INADDR_ANY);
-    printf("TCP socket configured\n");
+    // bind the socket and enable listen for incoming requests
+    if (bind(config->socket_fd, (struct sockaddr *)config->host_addr, config->host_addrlen) < 0)
+    {
+        perror("bc_server_new: could not bind");
+        free(config->host_addr);
+        free(config);
+        return NULL;
+    }
+
+    if (listen(config->socket_fd, SOMAXCONN) < 0)
+    {
+        perror("bc_server_new: could not listen");
+        free(config->host_addr);
+        free(config);
+        return NULL;
+    }
+    printf("config complete: server listening for connections\n");
     return config;
-}
-
-int tcp_socket_bind(struct bc_tcp_socket *config)
-{
-    // Bind the socket to the address
-    if (bind(config->socket_fd, (struct sockaddr *)config->host_addr, config->host_addrlen) != 0)
-    {
-        perror("webserver (bind)");
-        return -1;
-    }
-    printf("socket successfully bound to address\n");
-    return 0;
-}
-
-int tcp_socket_listen(struct bc_tcp_socket *config)
-{
-    if (listen(config->socket_fd, SOMAXCONN) != 0)
-    {
-        perror("webserver (listen)");
-        return -1;
-    }
-    printf("server listening for connections\n");
-    return 0;
-}
-
-int tcp_socket_free(struct bc_tcp_socket *config)
-{
-    close(config->socket_fd);
-    free(config->host_addr);
-    free(config);
-}
-
-struct bc_server_config *bc_server_new(int port)
-{
-    struct bc_tcp_socket *s = tcp_socket_new(port);
-    if (s == NULL)
-    {
-        perror("could not make socket");
-        return NULL;
-    }
-    if (tcp_socket_bind(s) < 0)
-    {
-        perror("could not bind socket");
-        return NULL;
-    }
-    if (tcp_socket_listen(s) < 0)
-    {
-        perror("could not listen on socket");
-        return NULL;
-    }
-
-    struct bc_server_config *server_config = malloc(sizeof(struct bc_server_config));
-    if (server_config == NULL)
-    {
-        perror("could not malloc server_config");
-        return NULL;
-    }
-    server_config->tcp_config = s;
-    return server_config;
 }
 
 char *bc_request_read_buffer(int accept_fd)
 {
     // init the deets 😎
-    const int base_size = 1024;
+    const int base_size = BC_REQ_BASE_SIZE;
     int cur_size = base_size;
     char *buffer = malloc(sizeof(char) * base_size);
     if (buffer == NULL)
@@ -146,6 +104,8 @@ char *bc_request_read_buffer(int accept_fd)
         valread = read(accept_fd, buffer + cur_size, base_size);
         cur_size = cur_size + base_size;
     }
+    int last = cur_size - base_size + valread;
+    buffer[last] = '\0';
     return buffer;
 }
 
@@ -159,6 +119,7 @@ struct bc_request *bc_request_parse(int accept_fd)
         perror("bc_request_parse: could not read buffer");
         return NULL;
     }
+    return req;
 
     // make a buffer copy to parse out the uri and method
     char *buffer_copy = malloc(strlen(req->raw_buffer));
@@ -203,18 +164,18 @@ struct bc_request *bc_request_parse(int accept_fd)
     {
         req->method = bc_PATCH;
     }
-      
+
     free(buffer_copy);
     return req;
 }
 
 int bc_server_dispatch(struct dispatch_args *args)
 {
-    struct bc_request *req = bc_request_parse(args->p_fd);
+    struct bc_request *req = bc_request_parse(*args->p_fd);
     if (req == NULL)
     {
         perror("bc_server_dispatch: could not parse req");
-        close(args->p_fd);
+        close(*args->p_fd);
         free(args);
         return -1;
     }
@@ -222,6 +183,8 @@ int bc_server_dispatch(struct dispatch_args *args)
     close(req->accept_fd);
     free(req->raw_buffer);
     free(req);
+    // clean up args
+    free(args->p_fd);
     free(args);
     return 0;
 }
@@ -231,12 +194,14 @@ int bc_server_start(struct bc_server_config *config)
     // Accept incoming connections
     while (1)
     {
-        int p_fd = accept(config->tcp_config->socket_fd,
-                          (struct sockaddr *)config->tcp_config->host_addr,
-                          (socklen_t *)&config->tcp_config->host_addrlen);
-        if (p_fd < 0)
+        // malloc each p_fd so that they can pass by refference between threads
+        int *p_fd = malloc(sizeof(int));
+        *p_fd = accept(config->socket_fd,
+                       (struct sockaddr *)config->host_addr,
+                       (socklen_t *)&config->host_addrlen);
+        if (*p_fd < 0)
         {
-            perror("webserver (accept)");
+            perror("bc_server_start: Could not accept request");
             return -1;
         }
 

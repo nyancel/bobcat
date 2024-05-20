@@ -23,17 +23,12 @@ struct bc_request
     char *raw_buffer;
 };
 
-struct bc_tcp_socket
+struct bc_server_config
 {
     int port;
     int socket_fd;
     int host_addrlen;
     struct sockaddr_in *host_addr;
-};
-
-struct bc_server_config
-{
-    struct bc_tcp_socket *tcp_config;
     int (*handler)(struct bc_request *req);
 };
 

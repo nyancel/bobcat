@@ -9,7 +9,7 @@
 
 int server_request_handler(struct bc_request *req)
 {
-    printf("%d\n", req->method);
+    printf("%s\n", req->raw_buffer);
     // plain example for now, should improve later
     char *resp = "HTTP/1.0 200 OK\r\n"
                  "Server: webserver-c\r\n"
@@ -35,7 +35,7 @@ int main(int argc, char *argv)
     struct bc_server_config *serv_con = bc_server_new(3000);
     if (serv_con == NULL)
     {
-        perror("Could not init the server");
+        perror("main: Could not init the server");
         return -1;
     }
 

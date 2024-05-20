@@ -36,7 +36,7 @@ possible, its much apreciated ^~^
 **todo:**
 - [x] handler: threaded tasks
 - [ ] handler: hot reloading
-- [ ] request parsing: methods
+- [x] request parsing: methods
 - [ ] request parsing: uri - path
 - [ ] request parsing: uri - args
 - [ ] request parsing: headers

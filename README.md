@@ -9,7 +9,7 @@ SSR MPA applications. as well as handling things like file-transfers.
 ## Roadmap
 1. Threading ✅
 2. Request parsing 🟡
-3. Handler mapping ❌
+3. Handler mapping 🟡
 4. Response generation ❌
 
 -- maybe more to come?
@@ -33,9 +33,16 @@ so if you're comfy with valgrind or have some other tools up your belt
 feel free to help sort out threading and memmor management where 
 possible, its much apreciated ^~^
 
+## known issues
+
+* crashes on unmapped URL
+* all "foreign" HTTP-VERBS are treated as bc_NONE
+
+
 **todo:**
 - [x] handler: threaded tasks
 - [ ] handler: hot reloading
+- [x] handler: map functions to rules
 - [x] request parsing: methods
 - [x] request parsing: uri - path
 - [ ] request parsing: uri - args

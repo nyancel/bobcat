@@ -10,7 +10,7 @@ enum bc_request_method
     bc_DELETE = 5,
     bc_CONNECT = 6,
     bc_OPTIONS = 7,
-    bc_TRAFCE = 8,
+    bc_TRACE = 8,
     bc_PATCH = 9,
     bc_NONE = 0,
 };

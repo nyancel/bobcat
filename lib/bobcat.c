@@ -109,6 +109,67 @@ char *bc_request_read_buffer(int accept_fd)
     return buffer;
 }
 
+enum bc_request_method bc_request_parse_method(char *raw)
+{
+    // the first word of the request should hold the method, so
+    // we init our result as bc_NONE and replace when we find a
+    // match
+    enum bc_request_method result = bc_NONE;
+
+    // get the length of the first word
+    int length = 0;
+    for (length = 0; length < strlen(raw) && raw[length] != ' '; length++)
+    {
+    };
+    // malloc and copy the word
+    char *word = malloc(length + 1);
+    strncpy(word, raw, length);
+    word[length] = '\0';
+
+    // match the word allowed actions, see MDN docs:
+    // https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods
+    if (strcmp(word, "GET") == 0)
+    {
+        result = bc_GET;
+    }
+    else if (strcmp(word, "HEAD") == 0)
+    {
+        result = bc_HEAD;
+    }
+    else if (strcmp(word, "POST") == 0)
+    {
+        result = bc_POST;
+    }
+    else if (strcmp(word, "PUT") == 0)
+    {
+        result = bc_PUT;
+    }
+    else if (strcmp(word, "DELETE") == 0)
+    {
+        result = bc_DELETE;
+    }
+    else if (strcmp(word, "CONNECT") == 0)
+    {
+        result = bc_CONNECT;
+    }
+    else if (strcmp(word, "OPTIONS") == 0)
+    {
+        result = bc_OPTIONS;
+    }
+    else if (strcmp(word, "TRACE") == 0)
+    {
+        result = bc_TRACE;
+    }
+    else if (strcmp(word, "PATCH") == 0)
+    {
+        result = bc_PATCH;
+    }
+
+    // free the word and return our result
+    free(word);
+    return result;
+}
+
 struct bc_request *bc_request_parse(int accept_fd)
 {
     struct bc_request *req = malloc(sizeof(struct bc_request));
@@ -119,53 +180,7 @@ struct bc_request *bc_request_parse(int accept_fd)
         perror("bc_request_parse: could not read buffer");
         return NULL;
     }
-    return req;
-
-    // make a buffer copy to parse out the uri and method
-    char *buffer_copy = malloc(strlen(req->raw_buffer));
-    strcpy(buffer_copy, req->raw_buffer);
-
-    // method is first word
-    char *word = strtok(buffer_copy, " ");
-    req->method = bc_NONE;
-    if (strcmp(word, "GET") == 0)
-    {
-        req->method = bc_GET;
-    }
-    if (strcmp(word, "HEAD") == 0)
-    {
-        req->method = bc_HEAD;
-    }
-    if (strcmp(word, "POST") == 0)
-    {
-        req->method = bc_POST;
-    }
-    if (strcmp(word, "PUT") == 0)
-    {
-        req->method = bc_PUT;
-    }
-    if (strcmp(word, "DELETE") == 0)
-    {
-        req->method = bc_DELETE;
-    }
-    if (strcmp(word, "CONNECT") == 0)
-    {
-        req->method = bc_CONNECT;
-    }
-    if (strcmp(word, "OPTIONS") == 0)
-    {
-        req->method = bc_OPTIONS;
-    }
-    if (strcmp(word, "TRAFCE") == 0)
-    {
-        req->method = bc_TRAFCE;
-    }
-    if (strcmp(word, "PATCH") == 0)
-    {
-        req->method = bc_PATCH;
-    }
-
-    free(buffer_copy);
+    req->method = bc_request_parse_method(req->raw_buffer);
     return req;
 }
 

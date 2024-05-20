@@ -67,6 +67,7 @@ struct bc_server_config *bc_server_new(int port)
         perror("bc_server_new: memmory error constructing socket");
         return NULL;
     }
+    config->handlers = NULL;
     config->port = port;
     config->host_addrlen = sizeof(struct sockaddr_in);
 
@@ -108,7 +109,6 @@ struct bc_server_config *bc_server_new(int port)
         free(config);
         return NULL;
     }
-    printf("config complete: server listening for connections\n");
     return config;
 }
 
@@ -248,6 +248,40 @@ struct bc_request *bc_request_parse(int accept_fd)
     return req;
 }
 
+int bc_server_register(struct bc_server_config *config, enum bc_request_method method, char *url, int (*handler)(struct bc_request *req))
+{
+    char *method_name = bc_method_name(method);
+    if (config->handlers == NULL)
+    {
+        struct dictlist_node *url_rule = dln_new(url, (void *)handler);
+        struct dictlist_node *method_rule = dln_new(method_name, (void *)url_rule);
+        config->handlers = method_rule;
+        return 1;
+    }
+
+    struct dictlist_node *method_handler = dln_get(config->handlers, method_name);
+    if (method_handler == NULL)
+    {
+        struct dictlist_node *url_rule = dln_new(url, (void *)handler);
+        if (dln_push(config->handlers, method_name, (void *)url_rule) < 0)
+        {
+            perror("bc_server_register: could not push new method");
+            return -1;
+        }
+        return 1;
+    }
+
+    struct dictlist_node *url_rule = dln_get(method_handler, url);
+    if (url_rule == NULL)
+    {
+        dln_push(method_handler, url, (void *)handler);
+        return 1;
+    }
+
+    perror("bc_server_register: could not push new url");
+    return -1;
+}
+
 int bc_server_dispatch(struct dispatch_args *args)
 {
     struct bc_request *req = bc_request_parse(*args->p_fd);
@@ -258,7 +292,40 @@ int bc_server_dispatch(struct dispatch_args *args)
         free(args);
         return -1;
     }
-    args->config->handler(req);
+
+    // TODO fix this dispatch
+    char *method_name = bc_method_name(req->method);
+    struct dictlist_node *url_rules = (struct dictlist_node *)dln_get(args->config->handlers, method_name);
+    if (url_rules == NULL)
+    {
+        perror("bc_server_dispatch: no url_rules for method");
+        // clean up request
+        close(req->accept_fd);
+        free(req->uri);
+        free(req->raw_buffer);
+        free(req);
+        // clean up args
+        free(args->p_fd);
+        free(args);
+        return -1;
+    }
+
+    int (*handler)(struct bc_request *req) = dln_get(url_rules, req->uri);
+    if (handler == NULL)
+    {
+        perror("bc_server_dispatch: no handler mapped to url");
+        // clean up request
+        close(req->accept_fd);
+        free(req->uri);
+        free(req->raw_buffer);
+        free(req);
+        // clean up args
+        free(args->p_fd);
+        free(args);
+        return -1;
+    }
+    handler(req);
+
     // clean up request
     close(req->accept_fd);
     free(req->uri);

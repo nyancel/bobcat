@@ -43,7 +43,12 @@ int main(int argc, char *argv)
     }
 
     // register the handler
-    serv_con->handler = (void *)&server_request_handler;
+    // serv_con->handler = (void *)&server_request_handler;
+    if (bc_server_register(serv_con, bc_GET, "/", (void *)&server_request_handler) < 0)
+    {
+        perror("main: Could not register route");
+        return -1;
+    }
 
     // start the server
     bc_server_start(serv_con);

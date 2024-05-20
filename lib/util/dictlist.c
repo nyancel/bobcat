@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <error.h>
+#include <string.h>
 
 #include "./dictlist.h"
 
@@ -66,7 +67,6 @@ struct dictlist_node *dln_pop(struct dictlist_node *dl)
     size_t l = dln_length(dl);
     if (l == 1)
     {
-        printf("called dln_pop on a singular node\n");
         return dl;
     }
 
@@ -93,8 +93,7 @@ void *dln_get(struct dictlist_node *dl, char *name)
     // then search until the end
     while (1)
     {
-        printf("%s\n", current->name);
-        if (current->name == name)
+        if (strcmp(current->name, name) == 0)
         {
             return current->data;
         }
